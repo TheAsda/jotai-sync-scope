@@ -30,14 +30,34 @@ describe(areMapsEqual, () => {
   });
 
   test('maps with multiple entries', () => {
-    expect(areMapsEqual(
-      new Map([['a', 1], ['b', 2], ['c', 3]]),
-      new Map([['a', 1], ['b', 2], ['c', 3]])
-    )).toBe(true);
-    expect(areMapsEqual(
-      new Map([['a', 1], ['b', 2], ['c', 3]]),
-      new Map([['a', 1], ['b', 2], ['c', 4]])
-    )).toBe(false);
+    expect(
+      areMapsEqual(
+        new Map([
+          ['a', 1],
+          ['b', 2],
+          ['c', 3],
+        ]),
+        new Map([
+          ['a', 1],
+          ['b', 2],
+          ['c', 3],
+        ])
+      )
+    ).toBe(true);
+    expect(
+      areMapsEqual(
+        new Map([
+          ['a', 1],
+          ['b', 2],
+          ['c', 3],
+        ]),
+        new Map([
+          ['a', 1],
+          ['b', 2],
+          ['c', 4],
+        ])
+      )
+    ).toBe(false);
   });
 
   test('maps with NaN values', () => {
