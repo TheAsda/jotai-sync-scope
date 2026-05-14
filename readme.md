@@ -31,7 +31,9 @@ const Panel = () => {
 
   return (
     <>
-      <p>Source: {source} / Target: {target}</p>
+      <p>
+        Source: {source} / Target: {target}
+      </p>
       <button onClick={() => setSource((v) => v + 1)}>Source +1</button>
       <button onClick={() => setTarget((v) => v + 1)}>Target +1</button>
     </>
@@ -76,7 +78,7 @@ const App = () => {
   return (
     <div>
       {itemAtoms.map((splitItemAtom, index) => (
-        <SyncScopeProvider key={index} atoms={[[splitItemAtom, itemAtom]]}>
+        <SyncScopeProvider key={splitItemAtom.key} atoms={[[splitItemAtom, itemAtom]]}>
           <ItemComponent />
         </SyncScopeProvider>
       ))}
@@ -90,11 +92,7 @@ const ItemComponent = () => {
   return (
     <div>
       <p>Item: {item}</p>
-      <input
-        type="text"
-        value={item}
-        onChange={(e) => setItem(e.target.value)}
-      />
+      <input type="text" value={item} onChange={(e) => setItem(e.target.value)} />
     </div>
   );
 };
