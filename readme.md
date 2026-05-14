@@ -41,27 +41,15 @@ const Panel = () => {
 };
 ```
 
-Both buttons update the same value.
-
 ## API
 
-### `SyncScopeProvider`
-
-`atoms` — array of `[source, target]` pairs. The source atom holds the state; the target atom is an alias.
-
-`children` — React nodes rendered inside the synced scope.
-
-### `AtomsToSync<T>`
+`SyncScopeProvider` accepts `atoms` — array of `[source, target]` pairs — and `children`.
 
 ```typescript
 type AtomsToSync<T = any> = [WritableAtom<T, any[], any>, WritableAtom<T, any[], any>];
 ```
 
-## Examples
-
-### SplitAtom Integration
-
-Map `splitAtom` items to stable module-level atoms:
+## SplitAtom Integration
 
 ```tsx
 import { atom, useAtom, useAtomValue } from 'jotai';
@@ -78,7 +66,7 @@ const App = () => {
   return (
     <div>
       {itemAtoms.map((splitItemAtom, index) => (
-        <SyncScopeProvider key={splitItemAtom.key} atoms={[[splitItemAtom, itemAtom]]}>
+        <SyncScopeProvider key={splitItemAtom.toString()} atoms={[[splitItemAtom, itemAtom]]}>
           <ItemComponent />
         </SyncScopeProvider>
       ))}
@@ -96,28 +84,6 @@ const ItemComponent = () => {
     </div>
   );
 };
-```
-
-### Nesting
-
-`SyncScopeProvider` can be nested — each level creates its own scope:
-
-```tsx
-const App = () => (
-  <SyncScopeProvider atoms={[[parentSource, parentTarget]]}>
-    <SyncScopeProvider atoms={[[childSource, childTarget]]}>
-      <Child />
-    </SyncScopeProvider>
-  </SyncScopeProvider>
-);
-```
-
-### Derived Atoms
-
-Derived atoms that depend on synced atoms work out of the box:
-
-```tsx
-const doubledAtom = atom((get) => get(targetAtom) * 2);
 ```
 
 ## License
