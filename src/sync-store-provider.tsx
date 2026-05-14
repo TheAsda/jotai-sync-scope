@@ -1,6 +1,7 @@
 import { Provider, useStore } from 'jotai';
-import { PropsWithChildren, useState } from 'react';
-import { AnyAtom, AnyWritableAtom, AtomsToSync } from './types';
+import { type PropsWithChildren, useState } from 'react';
+
+import type { AnyAtom, AnyWritableAtom, AtomsToSync } from './types';
 import { areMapsEqual } from './utils';
 
 export interface SyncScopeProviderProps extends PropsWithChildren {
@@ -36,10 +37,7 @@ export const SyncScopeProvider = (props: SyncScopeProviderProps) => {
         ...('read' in originalAtom && {
           read: (get, options) => {
             // TODO: get the correct atom
-            return originalAtom.read(
-              (atomToRead) => get(routeAtom(atomToRead)),
-              options
-            );
+            return originalAtom.read((atomToRead) => get(routeAtom(atomToRead)), options);
           },
         }),
         ...('write' in originalAtom && {
@@ -77,8 +75,7 @@ export const SyncScopeProvider = (props: SyncScopeProviderProps) => {
     const patchedStore: typeof store = {
       ...store,
       get: (atom, ...args) => store.get(getCorrectAtom(atom), ...args),
-      set: (atom, ...args) =>
-        store.set(getCorrectAtom(atom) as typeof atom, ...args),
+      set: (atom, ...args) => store.set(getCorrectAtom(atom) as typeof atom, ...args),
       sub: (atom, ...args) => store.sub(getCorrectAtom(atom), ...args),
     };
 
@@ -88,10 +85,7 @@ export const SyncScopeProvider = (props: SyncScopeProviderProps) => {
   const [state, setState] = useState(initialize);
 
   /** If store changed or provided atoms changed update the state */
-  if (
-    store !== state.originalStore ||
-    !areMapsEqual(state.targetsMap, targetsMap)
-  ) {
+  if (store !== state.originalStore || !areMapsEqual(state.targetsMap, targetsMap)) {
     setState(initialize);
   }
 

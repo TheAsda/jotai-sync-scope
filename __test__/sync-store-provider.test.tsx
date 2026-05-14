@@ -1,9 +1,10 @@
-import { describe, expect, test } from 'vitest';
-import { SyncScopeProvider } from '../src/sync-store-provider';
+import { act, renderHook } from '@testing-library/react';
 import { atom, useAtom, useAtomValue } from 'jotai';
 import { splitAtom } from 'jotai/utils';
-import { act, renderHook } from '@testing-library/react';
-import { PropsWithChildren } from 'react';
+import type { PropsWithChildren } from 'react';
+import { describe, expect, test } from 'vitest';
+
+import { SyncScopeProvider } from '../src/sync-store-provider';
 
 describe(SyncScopeProvider, () => {
   test('simple sync', () => {
@@ -12,9 +13,7 @@ describe(SyncScopeProvider, () => {
 
     const Provider = (props: PropsWithChildren) => {
       return (
-        <SyncScopeProvider atoms={[[sourceAtom, targetAtom]]}>
-          {props.children}
-        </SyncScopeProvider>
+        <SyncScopeProvider atoms={[[sourceAtom, targetAtom]]}>{props.children}</SyncScopeProvider>
       );
     };
 
@@ -72,17 +71,13 @@ describe(SyncScopeProvider, () => {
 
     const Provider = (props: PropsWithChildren) => {
       return (
-        <SyncScopeProvider atoms={[[sourceAtom, targetAtom]]}>
-          {props.children}
-        </SyncScopeProvider>
+        <SyncScopeProvider atoms={[[sourceAtom, targetAtom]]}>{props.children}</SyncScopeProvider>
       );
     };
     const Provider2 = (props: PropsWithChildren) => {
       return (
         <Provider>
-          <SyncScopeProvider atoms={[[targetAtom, nestedAtom]]}>
-            {props.children}
-          </SyncScopeProvider>
+          <SyncScopeProvider atoms={[[targetAtom, nestedAtom]]}>{props.children}</SyncScopeProvider>
         </Provider>
       );
     };
@@ -161,9 +156,7 @@ describe(SyncScopeProvider, () => {
 
     const Provider = (props: PropsWithChildren) => {
       return (
-        <SyncScopeProvider atoms={[[sourceAtom, targetAtom]]}>
-          {props.children}
-        </SyncScopeProvider>
+        <SyncScopeProvider atoms={[[sourceAtom, targetAtom]]}>{props.children}</SyncScopeProvider>
       );
     };
 
@@ -241,17 +234,13 @@ describe(SyncScopeProvider, () => {
 
     const Provider = (props: PropsWithChildren) => {
       return (
-        <SyncScopeProvider atoms={[[sourceAtom, targetAtom]]}>
-          {props.children}
-        </SyncScopeProvider>
+        <SyncScopeProvider atoms={[[sourceAtom, targetAtom]]}>{props.children}</SyncScopeProvider>
       );
     };
     const Provider2 = (props: PropsWithChildren) => {
       return (
         <Provider>
-          <SyncScopeProvider atoms={[[targetAtom, nestedAtom]]}>
-            {props.children}
-          </SyncScopeProvider>
+          <SyncScopeProvider atoms={[[targetAtom, nestedAtom]]}>{props.children}</SyncScopeProvider>
         </Provider>
       );
     };
@@ -333,9 +322,7 @@ describe(SyncScopeProvider, () => {
     const Provider = (props: PropsWithChildren) => {
       const atoms = useAtomValue(itemsAtoms);
       return (
-        <SyncScopeProvider atoms={[[atoms[1], syncedAtom]]}>
-          {props.children}
-        </SyncScopeProvider>
+        <SyncScopeProvider atoms={[[atoms[1], syncedAtom]]}>{props.children}</SyncScopeProvider>
       );
     };
 

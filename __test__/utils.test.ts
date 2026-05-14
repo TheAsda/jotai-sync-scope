@@ -1,4 +1,5 @@
 import { describe, expect, test } from 'vitest';
+
 import { areMapsEqual } from '../src/utils';
 
 describe(areMapsEqual, () => {
