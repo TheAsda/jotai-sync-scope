@@ -1,8 +1,11 @@
-import { Provider, useStore } from 'jotai';
+import { Provider, useStore, type Atom, type WritableAtom } from 'jotai';
 import { type PropsWithChildren, useState } from 'react';
 
-import type { AnyAtom, AnyWritableAtom, AtomsToSync } from './types';
+import type { AtomsToSync } from './types';
 import { areMapsEqual } from './utils';
+
+type AnyWritableAtom<T = any> = WritableAtom<T, any[], any>;
+type AnyAtom<T = any> = Atom<T>;
 
 export interface SyncScopeProviderProps extends PropsWithChildren {
   atoms: AtomsToSync[];
@@ -36,13 +39,11 @@ export const SyncScopeProvider = (props: SyncScopeProviderProps) => {
         ...originalAtom,
         ...('read' in originalAtom && {
           read: (get, options) => {
-            // TODO: get the correct atom
             return originalAtom.read((atomToRead) => get(routeAtom(atomToRead)), options);
           },
         }),
         ...('write' in originalAtom && {
           write: (get, set, ...args) => {
-            // TODO: get the correct atom
             return originalAtom.write(
               (atomToRead) => get(routeAtom(atomToRead)),
               (atomToWrite, ...v) => set(routeAtom(atomToWrite), ...v),

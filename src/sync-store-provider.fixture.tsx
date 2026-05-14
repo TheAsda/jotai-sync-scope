@@ -1,6 +1,6 @@
 import { atom, useAtom, useAtomValue } from 'jotai';
 
-import { SyncScopeProvider } from './sync-store-provider';
+import { SyncScopeProvider } from './index';
 
 const sourceAtom = atom(10);
 const targetAtom = atom(0);

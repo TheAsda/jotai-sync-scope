@@ -1,21 +1,19 @@
-The idea is to sync two Jotai atoms by basically making writing to synced atom to write to original atom.
+# jotai-sync-scope
 
-# Definitions
+Sync Jotai atoms across scope boundaries
 
-- **source atom** - atom that is declared/used higher in React tree
-- **target atom** - atom that should be synced with _source atom_ meaning that writing to it will write the same value to the source atom
+## Installation
 
-> Backwards should work too. Writing to _source atom_ should change value in _target atom_
+```bash
+npm install jotai-sync-scope
+bun add jotai-sync-scope
+yarn add jotai-sync-scope
+pnpm add jotai-sync-scope
+```
 
-# Rules
+## Quick Start
 
-- If the atom is not synced writing to it means writing to original atom
-- If the atom is _target atom_ then writing operation writes to associated _source atom_
-- If the atom is _source atom_ then writing operation writes to the atom and _target atom_ is updated automatically because _target atom_ is basically the reference to _source atom_
-
-# Usage
-
-```jsx
+```tsx
 import { atom, useAtom } from 'jotai';
 import { SyncScopeProvider } from 'jotai-sync-scope';
 
@@ -23,70 +21,244 @@ const sourceAtom = atom(0);
 const targetAtom = atom(0);
 
 const App = () => {
-  const [state] = useAtom(sourceAtom);
+  const [source, setSource] = useAtom(sourceAtom);
 
   return (
-    <>
-      <p>Source: {state}</p>
-      <Sync />
-    </>
+    <div>
+      <p>Source: {source}</p>
+      <SyncScopeProvider atoms={[[sourceAtom, targetAtom]]}>
+        <Counter />
+      </SyncScopeProvider>
+    </div>
   );
 };
 
-const Sync = (props) => {
-  return (
-    <SyncScopeProvider atoms={[[sourceAtom, targetAtom]]}>
-      <Component />
-    </SyncScopeProvider>
-  );
-};
-
-const Component = () => {
-  const [state, setState] = useAtom(targetAtom);
+const Counter = () => {
+  const [count, setCount] = useAtom(targetAtom);
 
   return (
-    <>
-      <p>Target: {state}</p>
-      <button onClick={() => setState((s) => s + 1)}>+1</button>
-    </>
+    <div>
+      <p>Target: {count}</p>
+      <button onClick={() => setCount((s) => s + 1)}>+1</button>
+    </div>
   );
 };
 ```
 
-# Use case
+## API Reference
 
-One of the use cases is when you have atom with array of items and you want to provide a way to consume item within scope of some components using `splitAtom` and hook to the item like it's global.
+### SyncScopeProvider
 
-```jsx
-import { atom, useAtom, useAtomValue, atom } from 'jotai';
+A React component that creates a sync scope for atoms.
+
+```tsx
+interface SyncScopeProviderProps {
+  atoms: AtomsToSync[];
+  children: React.ReactNode;
+}
+```
+
+#### atoms
+
+An array of atom pairs to sync. Each pair consists of:
+
+- **Source atom**: The atom that acts as the source of truth
+- **Target atom**: The atom that will be synced with the source atom
+
+**Type:** `[sourceAtom, targetAtom][]`
+
+**Example:**
+```tsx
+<SyncScopeProvider atoms={[[sourceAtom, targetAtom], [anotherSource, anotherTarget]]}>
+  {children}
+</SyncScopeProvider>
+```
+
+## Examples
+
+### Basic Sync
+
+Sync two atoms bidirectionally:
+
+```tsx
+import { atom, useAtom } from 'jotai';
+import { SyncScopeProvider } from 'jotai-sync-scope';
+
+const sourceAtom = atom(0);
+const targetAtom = atom(0);
+
+const App = () => {
+  const [source, setSource] = useAtom(sourceAtom);
+  const [target, setTarget] = useAtom(targetAtom);
+
+  return (
+    <div>
+      <p>Source: {source}</p>
+      <p>Target: {target}</p>
+      <button onClick={() => setSource((s) => s + 1)}>Increment Source</button>
+      <button onClick={() => setTarget((s) => s + 1)}>Increment Target</button>
+    </div>
+  );
+};
+
+const SyncScope = () => (
+  <SyncScopeProvider atoms={[[sourceAtom, targetAtom]]}>
+    <App />
+  </SyncScopeProvider>
+);
+```
+
+### SplitAtom Integration
+
+The killer use case for `jotai-sync-scope` - map `splitAtom` items to stable module-level atoms:
+
+```tsx
+import { atom, useAtom, useAtomValue } from 'jotai';
 import { splitAtom } from 'jotai/utils';
 import { SyncScopeProvider } from 'jotai-sync-scope';
 
-const tabsAtom = atom([]);
-const tabAtomsAtom = splitAtom(tabsAtom);
+const itemsAtom = atom(['a', 'b', 'c']);
+const itemAtomsAtom = splitAtom(itemsAtom);
+const itemAtom = atom('');
 
 const App = () => {
-  const tabAtoms = useAtomValue(tabAtomsAtom);
+  const itemAtoms = useAtomValue(itemAtomsAtom);
 
   return (
-    <>
-      {tabAtoms.map((atom) => (
-        <SyncScopeProvider atoms={[[atom, tabAtom]]} key={atom.key}>
-          <Tab />
+    <div>
+      {itemAtoms.map((splitItemAtom, index) => (
+        <SyncScopeProvider key={index} atoms={[[splitItemAtom, itemAtom]]}>
+          <ItemComponent />
         </SyncScopeProvider>
       ))}
-    </>
+    </div>
   );
 };
 
-const tabAtom = atom({});
+const ItemComponent = () => {
+  const [item, setItem] = useAtom(itemAtom);
 
-const Tab = () => {
-  const [tab, setTab] = useAtom(tabAtom);
+  return (
+    <div>
+      <p>Item: {item}</p>
+      <input
+        type="text"
+        value={item}
+        onChange={(e) => setItem(e.target.value)}
+      />
+    </div>
+  );
+};
+```
 
-  // You can update tabAtom value as if it's global but it's actually relates to an item from tabsAtom.
+### Nesting
+
+`SyncScopeProvider` can be nested for complex scenarios:
+
+```tsx
+import { atom, useAtom } from 'jotai';
+import { SyncScopeProvider } from 'jotai-sync-scope';
+
+const parentSource = atom('parent');
+const parentTarget = atom('');
+const childSource = atom('child');
+const childTarget = atom('');
+
+const App = () => (
+  <SyncScopeProvider atoms={[[parentSource, parentTarget]]}>
+    <ParentComponent>
+      <SyncScopeProvider atoms={[[childSource, childTarget]]}>
+        <ChildComponent />
+      </SyncScopeProvider>
+    </ParentComponent>
+  </SyncScopeProvider>
+);
+
+const ParentComponent = ({ children }) => {
+  const [parentValue] = useAtom(parentTarget);
+  
+  return (
+    <div>
+      <h2>Parent: {parentValue}</h2>
+      {children}
+    </div>
+  );
 };
 
-// You can even derive some state from tabAtom and use it to access some part of it
-const tabName = atom((get) => get(tabAtom).title);
+const ChildComponent = () => {
+  const [childValue] = useAtom(childTarget);
+  
+  return <p>Child: {childValue}</p>;
+};
 ```
+
+### Derived Atoms
+
+Derived atoms from synced atoms work correctly:
+
+```tsx
+import { atom, useAtom } from 'jotai';
+import { SyncScopeProvider } from 'jotai-sync-scope';
+
+const sourceAtom = atom(0);
+const targetAtom = atom(0);
+
+const derivedAtom = atom(
+  (get) => get(targetAtom) * 10,
+  (get, set, value: number | ((oldValue: number) => number)) => {
+    if (typeof value === 'function') {
+      value = value(get(targetAtom) * 10);
+    }
+    set(targetAtom, Math.floor(value / 10));
+  }
+);
+
+const App = () => {
+  const [source, setSource] = useAtom(sourceAtom);
+  const [target, setTarget] = useAtom(targetAtom);
+  const [derived, setDerived] = useAtom(derivedAtom);
+
+  return (
+    <SyncScopeProvider atoms={[[sourceAtom, targetAtom]]}>
+      <div>
+        <p>Source: {source}</p>
+        <p>Target: {target}</p>
+        <p>Derived (×10): {derived}</p>
+        <button onClick={() => setSource((s) => s + 1)}>
+          Increment Source
+        </button>
+        <button onClick={() => setDerived((d) => d + 100)}>
+          Increment Derived
+        </button>
+      </div>
+    </SyncScopeProvider>
+  );
+};
+```
+
+## How It Works
+
+`jotai-sync-scope` syncs atoms across scope boundaries using a source/target pattern:
+
+### Source Atom
+- The atom declared/used higher in the React tree
+- Acts as the source of truth for the sync operation
+- Writes to source atoms update both source and target atoms
+
+### Target Atom  
+- The atom that gets synced with the source atom
+- Writing to target atoms actually writes to the source atom
+- Target atoms provide a scoped interface to the source atom
+
+### Bidirectional Sync
+- **Source → Target**: Writing to a source atom updates both the source and all associated target atoms
+- **Target → Source**: Writing to a target atom writes to the corresponding source atom
+- Both directions maintain synchronization across scope boundaries
+
+## Error Handling
+
+Errors in atoms propagate naturally to React error boundaries. This follows Jotai's convention — `jotai-sync-scope` does not catch or suppress errors.
+
+## License
+
+MIT
