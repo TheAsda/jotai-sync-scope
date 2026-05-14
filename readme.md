@@ -1,92 +1,91 @@
-The idea is to sync two Jotai atoms by basically making writing to synced atom to write to original atom.
+# jotai-sync-scope
 
-# Definitions
+Sync Jotai atoms across scope boundaries.
 
-- **source atom** - atom that is declared/used higher in React tree
-- **target atom** - atom that should be synced with _source atom_ meaning that writing to it will write the same value to the source atom
+Jotai's `splitAtom` produces temporary atoms that change when the list changes. `jotai-sync-scope` syncs them to stable module-level atoms.
 
-> Backwards should work too. Writing to _source atom_ should change value in _target atom_
+## Installation
 
-# Rules
+```bash
+npm install jotai-sync-scope
+```
 
-- If the atom is not synced writing to it means writing to original atom
-- If the atom is _target atom_ then writing operation writes to associated _source atom_
-- If the atom is _source atom_ then writing operation writes to the atom and _target atom_ is updated automatically because _target atom_ is basically the reference to _source atom_
+## Quick Start
 
-# Usage
-
-```jsx
+```tsx
 import { atom, useAtom } from 'jotai';
 import { SyncScopeProvider } from 'jotai-sync-scope';
 
 const sourceAtom = atom(0);
 const targetAtom = atom(0);
 
-const App = () => {
-  const [state] = useAtom(sourceAtom);
+const App = () => (
+  <SyncScopeProvider atoms={[[sourceAtom, targetAtom]]}>
+    <Panel />
+  </SyncScopeProvider>
+);
+
+const Panel = () => {
+  const [source, setSource] = useAtom(sourceAtom);
+  const [target, setTarget] = useAtom(targetAtom);
 
   return (
     <>
-      <p>Source: {state}</p>
-      <Sync />
-    </>
-  );
-};
-
-const Sync = (props) => {
-  return (
-    <SyncScopeProvider atoms={[[sourceAtom, targetAtom]]}>
-      <Component />
-    </SyncScopeProvider>
-  );
-};
-
-const Component = () => {
-  const [state, setState] = useAtom(targetAtom);
-
-  return (
-    <>
-      <p>Target: {state}</p>
-      <button onClick={() => setState((s) => s + 1)}>+1</button>
+      <p>
+        Source: {source} / Target: {target}
+      </p>
+      <button onClick={() => setSource((v) => v + 1)}>Source +1</button>
+      <button onClick={() => setTarget((v) => v + 1)}>Target +1</button>
     </>
   );
 };
 ```
 
-# Use case
+## API
 
-One of the use cases is when you have atom with array of items and you want to provide a way to consume item within scope of some components using `splitAtom` and hook to the item like it's global.
+`SyncScopeProvider` accepts `atoms` — array of `[source, target]` pairs — and `children`.
 
-```jsx
-import { atom, useAtom, useAtomValue, atom } from 'jotai';
+```typescript
+type AtomsToSync<T = any> = [WritableAtom<T, any[], any>, WritableAtom<T, any[], any>];
+```
+
+## SplitAtom Integration
+
+```tsx
+import { atom, useAtom, useAtomValue } from 'jotai';
 import { splitAtom } from 'jotai/utils';
 import { SyncScopeProvider } from 'jotai-sync-scope';
 
-const tabsAtom = atom([]);
-const tabAtomsAtom = splitAtom(tabsAtom);
+const itemsAtom = atom(['a', 'b', 'c']);
+const itemAtomsAtom = splitAtom(itemsAtom);
+const itemAtom = atom('');
 
 const App = () => {
-  const tabAtoms = useAtomValue(tabAtomsAtom);
+  const itemAtoms = useAtomValue(itemAtomsAtom);
 
   return (
-    <>
-      {tabAtoms.map((atom) => (
-        <SyncScopeProvider atoms={[[atom, tabAtom]]} key={atom.key}>
-          <Tab />
+    <div>
+      {itemAtoms.map((splitItemAtom, index) => (
+        <SyncScopeProvider key={splitItemAtom.toString()} atoms={[[splitItemAtom, itemAtom]]}>
+          <ItemComponent />
         </SyncScopeProvider>
       ))}
-    </>
+    </div>
   );
 };
 
-const tabAtom = atom({});
+const ItemComponent = () => {
+  const [item, setItem] = useAtom(itemAtom);
 
-const Tab = () => {
-  const [tab, setTab] = useAtom(tabAtom);
-
-  // You can update tabAtom value as if it's global but it's actually relates to an item from tabsAtom.
+  return (
+    <div>
+      <p>Item: {item}</p>
+      <input type="text" value={item} onChange={(e) => setItem(e.target.value)} />
+    </div>
+  );
 };
-
-// You can even derive some state from tabAtom and use it to access some part of it
-const tabName = atom((get) => get(tabAtom).title);
 ```
+
+## License
+
+MIT

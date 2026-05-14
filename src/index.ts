@@ -1,3 +1,3 @@
-export * from './sync-store-provider';
-export * from './types';
-export * from './utils';
+export { SyncScopeProvider } from './sync-store-provider';
+export type { SyncScopeProviderProps } from './sync-store-provider';
+export type { AtomsToSync } from './types';
