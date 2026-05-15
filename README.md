@@ -86,6 +86,8 @@ const ItemComponent = () => {
 };
 ```
 
+> For isolating atoms to provider subtrees (preventing propagation), use [`jotai-scope`](https://github.com/jotaijs/jotai-scope).
+
 ## License
 
 MIT
