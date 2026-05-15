@@ -1,6 +1,6 @@
 import { act, renderHook } from '@testing-library/react';
 import { atom, useAtom, useAtomValue, useSetAtom } from 'jotai';
-import { splitAtom } from 'jotai/utils';
+import { atomWithReset, useResetAtom, splitAtom } from 'jotai/utils';
 import { type PropsWithChildren, useState } from 'react';
 import { describe, expect, test } from 'vitest';
 
@@ -806,5 +806,107 @@ describe(SyncScopeProvider, () => {
       result.current.setTarget(10);
     });
     expect(result.current.target).toBe(10);
+  });
+
+  test('async atom sync', async () => {
+    const sourceAtom = atom(0);
+    const targetAtom = atom(0);
+    let resolved = false;
+    const asyncDerived = atom((get) => {
+      const val = get(targetAtom);
+      if (val === 0) return 'idle';
+      return resolved ? `resolved-${val}` : `pending-${val}`;
+    });
+
+    const Provider = (props: PropsWithChildren) => (
+      <SyncScopeProvider atoms={[[sourceAtom, targetAtom]]}>{props.children}</SyncScopeProvider>
+    );
+
+    const { result } = renderHook(
+      () => {
+        const [target, setTarget] = useAtom(targetAtom);
+        const derived = useAtomValue(asyncDerived);
+        return { target, setTarget, derived };
+      },
+      { wrapper: Provider }
+    );
+
+    const { result: globalScope } = renderHook(() => {
+      const [source, setSource] = useAtom(sourceAtom);
+      return { source, setSource };
+    });
+
+    expect(result.current.target).toBe(0);
+    expect(result.current.derived).toBe('idle');
+
+    act(() => {
+      result.current.setTarget(5);
+    });
+    expect(result.current.target).toBe(5);
+    expect(globalScope.current.source).toBe(5);
+    expect(result.current.derived).toBe('pending-5');
+
+    resolved = true;
+    act(() => {
+      globalScope.current.setSource(10);
+    });
+    expect(result.current.target).toBe(10);
+    expect(result.current.derived).toBe('resolved-10');
+  });
+
+  test('atomWithReset sync', () => {
+    const sourceAtom = atomWithReset(0);
+    const targetAtom = atomWithReset(0);
+
+    const Provider = (props: PropsWithChildren) => (
+      <SyncScopeProvider atoms={[[sourceAtom, targetAtom]]}>{props.children}</SyncScopeProvider>
+    );
+
+    const { result } = renderHook(
+      () => {
+        const [target, setTarget] = useAtom(targetAtom);
+        const resetTarget = useResetAtom(targetAtom);
+        return { target, setTarget, resetTarget };
+      },
+      { wrapper: Provider }
+    );
+
+    const { result: globalScope } = renderHook(() => {
+      const [source, setSource] = useAtom(sourceAtom);
+      const resetSource = useResetAtom(sourceAtom);
+      return { source, setSource, resetSource };
+    });
+
+    expect(result.current.target).toBe(0);
+    expect(globalScope.current.source).toBe(0);
+
+    act(() => {
+      result.current.setTarget(42);
+    });
+    expect(result.current.target).toBe(42);
+    expect(globalScope.current.source).toBe(42);
+
+    act(() => {
+      globalScope.current.setSource(99);
+    });
+    expect(result.current.target).toBe(99);
+    expect(globalScope.current.source).toBe(99);
+
+    act(() => {
+      result.current.resetTarget();
+    });
+    expect(result.current.target).toBe(0);
+    expect(globalScope.current.source).toBe(0);
+
+    act(() => {
+      globalScope.current.setSource(77);
+    });
+    expect(result.current.target).toBe(77);
+
+    act(() => {
+      globalScope.current.resetSource();
+    });
+    expect(result.current.target).toBe(0);
+    expect(globalScope.current.source).toBe(0);
   });
 });

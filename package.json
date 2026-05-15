@@ -1,7 +1,7 @@
 {
   "name": "jotai-sync-scope",
   "version": "0.0.0",
-  "description": "Library for syncing Jotai atoms",
+  "description": "Sync Jotai atoms across scope boundaries",
   "keywords": [
     "jotai",
     "react",
@@ -23,12 +23,15 @@
   "module": "dist/index.mjs",
   "types": "dist/index.d.ts",
   "exports": {
-    "require": {
-      "types": "./dist/index.d.cts",
-      "default": "./dist/index.cjs"
-    },
-    "import": {
-      "types": "./dist/index.d.mts",
+    ".": {
+      "require": {
+        "types": "./dist/index.d.cts",
+        "default": "./dist/index.cjs"
+      },
+      "import": {
+        "types": "./dist/index.d.mts",
+        "default": "./dist/index.mjs"
+      },
       "default": "./dist/index.mjs"
     }
   },
@@ -36,7 +39,7 @@
     "access": "public"
   },
   "scripts": {
-    "build": "pkgroll",
+    "build": "pkgroll --sourcemap",
     "cosmos": "cosmos",
     "test": "vitest run",
     "check": "tsc --noEmit",
@@ -71,5 +74,8 @@
   "peerDependencies": {
     "jotai": "^2",
     "react": "^18 || ^19"
+  },
+  "engines": {
+    "node": ">=18"
   }
 }

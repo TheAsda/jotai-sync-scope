@@ -1,11 +1,10 @@
 import { Provider, useStore, type Atom, type WritableAtom } from 'jotai';
-import { type PropsWithChildren, useState } from 'react';
-
-import type { AtomsToSync } from './types';
-import { areMapsEqual } from './utils';
+import { useState, type PropsWithChildren } from 'react';
 
 type AnyWritableAtom<T = any> = WritableAtom<T, any[], any>;
 type AnyAtom<T = any> = Atom<T>;
+
+export type AtomsToSync<T = any> = [AnyWritableAtom<T>, AnyWritableAtom<T>];
 
 export interface SyncScopeProviderProps extends PropsWithChildren {
   atoms: AtomsToSync[];
@@ -16,11 +15,10 @@ export const SyncScopeProvider = (props: SyncScopeProviderProps) => {
 
   const store = useStore();
 
-  const targetsMap = new Map<AnyAtom, AnyAtom>(
-    atoms.map(([sourceAtom, targetAtom]) => [targetAtom, sourceAtom])
-  );
-
   const initialize = () => {
+    const targetsMap = new Map<AnyAtom, AnyAtom>(
+      atoms.map(([sourceAtom, targetAtom]) => [targetAtom, sourceAtom])
+    );
     const atomClones = new WeakMap<AnyAtom, AnyAtom>();
 
     /** Clones atom that handles read/write and translates commands to the original atom */
@@ -65,7 +63,7 @@ export const SyncScopeProvider = (props: SyncScopeProviderProps) => {
         atom = targetsMap.get(atom)! as A;
       }
       if (atomClones.has(atom)) {
-        return atomClones.get(atom)! as typeof atom;
+        return atomClones.get(atom)! as A;
       }
       const clone = cloneAtom(atom as unknown as AnyWritableAtom);
       atomClones.set(atom, clone);
@@ -80,13 +78,16 @@ export const SyncScopeProvider = (props: SyncScopeProviderProps) => {
       sub: (atom, ...args) => store.sub(getCorrectAtom(atom), ...args),
     };
 
-    return { originalStore: store, patchedStore, targetsMap };
+    return { originalStore: store, patchedStore, atoms };
   };
 
   const [state, setState] = useState(initialize);
 
-  /** If store changed or provided atoms changed update the state */
-  if (store !== state.originalStore || !areMapsEqual(state.targetsMap, targetsMap)) {
+  if (
+    store !== state.originalStore ||
+    atoms.length !== state.atoms.length ||
+    atoms.some((pair, i) => pair[0] !== state.atoms[i][0] || pair[1] !== state.atoms[i][1])
+  ) {
     setState(initialize);
   }
 
